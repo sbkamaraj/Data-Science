@@ -1,0 +1,384 @@
+Airlines Using Forecasting
+library(readr)
+library(readxl)
+Airlines <- read_excel(file.choose()) 
+View(Airlines) # Seasonality 12 months
+plot(Airlines$Passengers, type = 'o')
+ 
+
+X <- data.frame(outer(rep(month.abb,length = 96), month.abb,"==") + 0 )# Creating dummies for 12 months
+colnames(X) <- month.abb # Assigning month names 
+View(X)
+
+AirlinesPassengers <- cbind(Airlines,X)
+View(AirlinesPassengers)
+colnames(AirlinesPassengers)
+
+# input t
+AirlinesPassengers["t"] <- c(1:96)
+View(AirlinesPassengers)
+
+AirlinesPassengers["log_Passengers"] <- log(AirlinesPassengers$Passengers)
+AirlinesPassengers["t_square"] <- AirlinesPassengers$t*AirlinesPassengers$t
+View(AirlinesPassengers)
+## Preprocesing completed
+
+attach(AirlinesPassengers)
+# partitioning
+train <- AirlinesPassengers[1:84,]
+test <- AirlinesPassengers[85:96,]
+linear_model <- lm(Passengers ~ t, data = train)
+summary(linear_model)
+linear_pred <- data.frame(predict(linear_model, interval='predict', newdata =test))
+rmse_linear <- sqrt(mean((test$Passengers-linear_pred$fit)^2, na.rm = T))
+rmse_linear
+
+ 
+
+expo_model <- lm(log_Passengers ~ t, data = train)
+summary(expo_model)
+expo_pred <- data.frame(predict(expo_model, interval='predict', newdata = test))
+rmse_expo <- sqrt(mean((test$Passengers-exp(expo_pred$fit))^2, na.rm = T))
+rmse_expo #46.05736
+
+ 
+
+Quad_model <- lm(Passengers ~ t + t_square, data = train)
+summary(Quad_model)
+Quad_pred <- data.frame(predict(Quad_model, interval='predict', newdata=test))
+rmse_Quad <- sqrt(mean((test$Passengers-Quad_pred$fit)^2, na.rm=T))
+rmse_Quad #48.05189
+
+ 
+
+sea_add_model <- lm(Passengers ~ Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov, data = train)
+summary(sea_add_model)
+sea_add_pred <- data.frame(predict(sea_add_model, newdata=test, interval = 'predict'))
+rmse_sea_add <- sqrt(mean((test$Passengers-sea_add_pred$fit)^2, na.rm = T))
+rmse_sea_add #132.8198
+
+ 
+
+Add_sea_Quad_model <- lm(Passengers ~ t+t_square+Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov, data = train)
+summary(Add_sea_Quad_model)
+Add_sea_Quad_pred <- data.frame(predict(Add_sea_Quad_model, interval='predict', newdata=test))
+rmse_Add_sea_Quad <- sqrt(mean((test$Passengers - Add_sea_Quad_pred$fit)^2, na.rm=T))
+rmse_Add_sea_Quad #26.36082
+
+ 
+
+multi_sea_model <- lm(log_Passengers ~ Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov, data = train)
+summary(multi_sea_model)
+multi_sea_pred <- data.frame(predict(multi_sea_model, newdata=test, interval='predict'))
+rmse_multi_sea <- sqrt(mean((test$Passengers-exp(multi_sea_pred$fit))^2, na.rm = T))
+rmse_multi_sea #140.0632
+
+ 
+
+# Preparing table on model and it's RMSE values 
+
+table_rmse <- data.frame(c("rmse_linear","rmse_expo","rmse_Quad","rmse_sea_add","rmse_Add_sea_Quad","rmse_multi_sea"),c(rmse_linear,rmse_expo,rmse_Quad,rmse_sea_add,rmse_Add_sea_Quad,rmse_multi_sea))
+colnames(table_rmse) <- c("model","RMSE")
+View(table_rmse)
+ 
+
+
+# Additive seasonality with Quadratic has least RMSE value
+
+write.csv(AirlinesPassengers, file="AirlinesPassengers.csv", row.names = F)
+getwd()
+
+############### Combining Training & test data to build Additive seasonality using Quadratic Trend ############
+
+Add_sea_Quad_model_final <- lm(Passengers ~ t+t_square+Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov, data = AirlinesPassengers)
+summary(Add_sea_Quad_model_final)
+
+
+
+ 
+
+View(test)
+pred_new1 <- predict(Add_sea_Quad_model_final, newdata = test, interval = 'predict')
+pred_new1 <- as.data.frame(pred_new1)
+
+View(pred_new1)
+
+plot(Add_sea_Quad_model_final)
+ 
+
+ 
+
+ 
+
+ 
+
+acf(Add_sea_Quad_model_final$residuals, lag.max = 10) # take all residual value of the model built & plot ACF plot
+
+ 
+
+acf(Add_sea_Quad_model_final$residuals, lag.max = 10) # take all residual value of the model built & plot ACF plot
+
+A <- arima(Add_sea_Quad_model_final$residuals, order = c(1,0,0))
+A$residuals
+
+ARerrors <- A$residuals
+
+acf(ARerrors, lag.max = 10)
+
+B <- arima(ARerrors, order = c(4,0,0))
+View(B)
+B$residuals
+
+ARerrors1 <- B$residuals
+
+acf(ARerrors1, lag.max = 10)
+
+ 
+
+# predicting next 12 months errors using arima( order =c(1,0,0))
+install.packages("forecast")
+library(forecast)
+errors_12 <- forecast(B, h = 12)
+
+View(errors_12)
+
+future_errors <- data.frame(errors_12)
+View(future_errors)
+class(future_errors)
+future_errors <- future_errors$Point.Forecast
+
+# predicted values for new data + future error values 
+
+predicted_new_values <- pred_new1$fit + future_errors
+
+write.csv(predicted_new_values, file = "predicted_new_values.csv", row.names = F)
+getwd()
+
+
+Coca cola Using Forecast
+library(forecast)
+install.packages("fpp")
+library(fpp)
+install.packages("smooth")
+library(smooth) # forsmoothing and MAPE
+install.packages("tseries")
+library(tseries)
+library(readxl)
+library(readr)
+CocaCola_Sales_Rawdata <- read_excel(file.choose())
+View(CocaCola_Sales_Rawdata)
+
+
+# Converting data into time series object
+?ts
+
+tssales<-ts(CocaCola_Sales_Rawdata$Sales,frequency = 4,start=c(42))
+View(tssales)
+
+# dividing entire data into training and testing data 
+train<-tssales[1:38]
+test<-tssales[39:42] # Considering only 4 Quarters of data for testing because data itself is Quarterly
+# seasonal data
+
+# converting time series object
+train<-ts(train,frequency = 4)
+test<-ts(test,frequency = 4)
+
+# Plotting time series data
+plot(tssales) # Visualization shows that it has level, trend, seasonality => Additive seasonality
+ 
+
+#### USING HoltWinters function ################
+# Optimum values
+# with alpha = 0.2 which is default value
+# Assuming time series data has only level parameter
+hw_a<-HoltWinters(train,alpha = 0.2,beta = F,gamma = F)
+hw_a
+ 
+hwa_pred<-data.frame(predict(hw_a,n.ahead=4))
+# By looking at the plot the forecasted values are not showing any characters of train data 
+plot(forecast(hw_a,h=4))
+hwa_mape<-MAPE(hwa_pred$fit,test)*100
+#16.13
+ 
+
+
+
+
+
+# with alpha = 0.2, beta = 0.1
+# Assuming time series data has level and trend parameter 
+hw_ab<-HoltWinters(train,alpha = 0.2,beta = 0.15,gamma = F)
+hw_ab
+
+ 
+
+hwab_pred<-data.frame(predict(hw_ab,n.ahead = 4))
+# by looking at the plot the forecasted values are still missing some characters exhibited by train data
+plot(forecast(hw_ab,h=4))
+ 
+hwab_mape<-MAPE(hwab_pred$fit,test)*100
+#8.75
+
+# with alpha = 0.2, beta = 0.15, gamma = 0.05 
+# Assuming time series data has level,trend and seasonality 
+hw_abg<-HoltWinters(train,alpha = 0.2,beta = 0.15,gamma = 0.05)
+hw_abg
+ 
+hwabg_pred<-data.frame(predict(hw_abg,n.ahead = 4))
+# by looking at the plot the characters of forecasted values are closely following historical data
+plot(forecast(hw_abg,h=4))
+ 
+hwabg_mape<-MAPE(hwabg_pred$fit,test)*100
+#3.59
+
+# With out optimum values 
+hw_na<-HoltWinters(train,beta = F,gamma = F)
+hw_na
+ 
+hwna_pred<-data.frame(predict(hw_na,n.ahead = 4))
+hwna_pred
+plot(forecast(hw_na,h=4))
+ 
+hwna_mape<-MAPE(hwna_pred$fit,test)*100
+#9.1
+hw_nab<-HoltWinters(train,gamma=F)
+hw_nab
+ 
+hwnab_pred<-data.frame(predict(hw_nab,n.ahead=4))
+hwnab_pred
+plot(forecast(hw_nab,h=4))
+ 
+hwnab_mape<-MAPE(hwnab_pred$fit,test)*100
+#8.63
+hw_nabg<-HoltWinters(train)
+hw_nabg
+ 
+hwnabg_pred<-data.frame(predict(hw_nabg,n.ahead =4))
+hwnabg_pred
+plot(forecast(hw_nabg,h=4))
+ 
+hwnabg_mape<-MAPE(hwnabg_pred$fit,test)*100
+#2.4
+############################## STOP HERE ###############################
+
+df_mape<-data.frame(c("hwa_mape","hwab_mape","hwabg_mape","hwna_mape","hwnab_mape","hwnabg_mape"),c(hwa_mape,hwab_mape,hwabg_mape,hwna_mape,hwnab_mape,hwnabg_mape))
+
+colnames(df_mape)<-c("MAPE","VALUES")
+View(df_mape)
+ 
+# Based on the MAPE value who choose holts winter exponential tecnique which assumes the time series
+# Data level, trend, seasonality characters with default values of alpha, beta and gamma
+
+new_model <- HoltWinters(tssales)
+new_model
+
+plot(forecast(new_model,n.ahead=4))
+ 
+# Forecasted values for the next 4 quarters
+forecast_new <- data.frame(predict(new_model,n.ahead=4))
+ 
+
+Plastics Sales Using Forecasting
+library(readr)
+library(readxl)
+Plastics <- read_csv(file.choose()) 
+View(Plastics) # Seasonality 12 months
+plot(Plastics$Sales, type = 'o')
+ 
+X <- data.frame(outer(rep(month.abb,length = 60), month.abb,"==") + 0 )# Creating dummies for 12 months
+colnames(X) <- month.abb # Assigning month names 
+View(X)
+
+PlasticsSales <- cbind(Plastics,X)
+View(PlasticsSales)
+colnames(PlasticsSales)
+
+# input t
+PlasticsSales["t"] <- c(1:60)
+View(PlasticsSales)
+
+PlasticsSales["log_Sales"] <- log(PlasticsSales$Sales)
+PlasticsSales["t_square"] <- PlasticsSales$t*PlasticsSales$t
+View(PlasticsSales)
+## Preprocesing completed
+
+attach(PlasticsSales)
+# partitioning
+train <- PlasticsSales[1:48,]
+test <- PlasticsSales[49:60,]
+########################### LINEAR MODEL #############################
+
+linear_model <- lm(Sales ~ t, data = train)
+summary(linear_model)
+linear_pred <- data.frame(predict(linear_model, interval='predict', newdata =test))
+rmse_linear <- sqrt(mean((test$Footfalls-linear_pred$fit)^2, na.rm = T))
+rmse_linear
+
+ 
+
+######################### Exponential #################################
+
+expo_model <- lm(log_Sales ~ t, data = train)
+summary(expo_model)
+expo_pred <- data.frame(predict(expo_model, interval='predict', newdata = test))
+rmse_expo <- sqrt(mean((test$Sales-exp(expo_pred$fit))^2, na.rm = T))
+rmse_expo #268.93
+
+ 
+
+######################### Quadratic ####################################
+
+Quad_model <- lm(Sales ~ t + t_square, data = train)
+summary(Quad_model)
+Quad_pred <- data.frame(predict(Quad_model, interval='predict', newdata=test))
+rmse_Quad <- sqrt(mean((test$Sales-Quad_pred$fit)^2, na.rm=T))
+rmse_Quad #297.40
+
+ 
+
+######################### Additive Seasonality #########################
+
+sea_add_model <- lm(Sales ~ Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov, data = train)
+summary(sea_add_model)
+sea_add_pred <- data.frame(predict(sea_add_model, newdata=test, interval = 'predict'))
+rmse_sea_add <- sqrt(mean((test$Sales-sea_add_pred$fit)^2, na.rm = T))
+rmse_sea_add #235.60
+
+ 
+
+######################## Additive Seasonality with Quadratic #################
+
+Add_sea_Quad_model <- lm(Sales ~ t+t_square+Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov, data = train)
+summary(Add_sea_Quad_model)
+Add_sea_Quad_pred <- data.frame(predict(Add_sea_Quad_model, interval='predict', newdata=test))
+rmse_Add_sea_Quad <- sqrt(mean((test$Sales - Add_sea_Quad_pred$fit)^2, na.rm=T))
+rmse_Add_sea_Quad #218.19
+ 
+
+ 
+
+######################## Multiplicative Seasonality #########################
+
+multi_sea_model <- lm(log_Sales ~ Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov, data = train)
+summary(multi_sea_model)
+multi_sea_pred <- data.frame(predict(multi_sea_model, newdata=test, interval='predict'))
+rmse_multi_sea <- sqrt(mean((test$Sales-exp(multi_sea_pred$fit))^2, na.rm = T))
+rmse_multi_sea #239.6543
+
+# Preparing table on model and it's RMSE values 
+
+table_rmse <- data.frame(c("rmse_linear","rmse_expo","rmse_Quad","rmse_sea_add","rmse_Add_sea_Quad","rmse_multi_sea"),c(rmse_linear,rmse_expo,rmse_Quad,rmse_sea_add,rmse_Add_sea_Quad,rmse_multi_sea))
+colnames(table_rmse) <- c("model","RMSE")
+View(table_rmse)
+
+ 
+
+############### Combining Training & test data to build Additive seasonality using Quadratic Trend ############
+
+Add_sea_Quad_model_final <- lm(Sales ~ t+t_square+Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov, data = PlasticsSales)
+summary(Add_sea_Quad_model_final)
+
+?predict
+forecast_new <- data.frame(predict(Add_sea_Quad_model_final,newdata= test,interval = 'predict' ))
+forecast_new
