@@ -1,0 +1,152 @@
+Hypothesis Testing
+1.	An F&B manager wants to determine whether there is any significant difference in the diameter of the cutlet between two units. A randomly selected sample of cutlets was collected from both units and measured? Analyze the data and draw inferences at 5% significance level. Please state the assumptions and tests that you carried out to check validity of the assumptions.
+
+H0: No difference in cutlet
+H1: Has difference in cutlet
+
+cutlet = read.csv(file.choose())
+cutlet
+attach(cutlet)
+colnames(cutlet) <- c("Unit.A","Unit.B")
+
+shapiro.test(Unit.A)
+data:  Unit.A
+W = 0.96495, p-value = 0.32
+
+shapiro.test(Unit.B)
+data:  Unit.B
+W = 0.97273, p-value = 0.5225
+
+Both follows Normal Distribution
+
+var.test(Unit.A,Unit.B)
+
+F test to compare two variances
+
+data:  Unit.A and Unit.B
+F = 0.70536, num df = 34, denom df = 34, p-value = 0.3136
+alternative hypothesis: true ratio of variances is not equal to 1
+95 percent confidence interval:
+ 0.3560436 1.3974120
+sample estimates:
+ratio of variances 
+         0.7053649 
+
+Both variances are equal
+
+2 Sample T Test:
+
+t.test(Unit.A,Unit.B,alternative = "two.sided", conf.level = 0.95, correct = TRUE)
+
+
+Welch Two Sample t-test
+
+data:  Unit.A and Unit.B
+t = 0.72287, df = 66.029, p-value = 0.4723
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -0.09654633  0.20613490
+sample estimates:
+mean of x mean of y 
+ 7.019091  6.964297 
+
+
+It accepts the Null hypothesis. No difference in the diameter of the Cutlet
+
+2.	A hospital wants to determine whether there is any difference in the average Turn Around Time (TAT) of reports of the laboratories on their preferred list. They collected a random sample and recorded TAT for reports of 4 laboratories. TAT is defined as sample collected to report dispatch. Analyze the data and determine whether there is any difference in average TAT among the different laboratories at 5% significance level.
+H0: No difference among the different lab
+H1:Has difference among the different lab
+
+Lab= read.csv(file.choose())
+Lab
+stacked_data <- stack(Lab)
+attach(stacked_data)
+stacked_data
+
+library(normtest)
+install.packages("goftest")
+library(goftest)
+ad.test(stacked_data$values)
+
+Anderson-Darling test of goodness-of-fit
+	Null hypothesis: uniform distribution
+	Parameters assumed to be fixed
+
+data:  stacked_data$values
+An = Inf, p-value = 1.25e-06
+
+It does not follow Normal distribution.
+
+install.packages("RVAideMemoire")
+library(RVAideMemoire)
+attach(stacked_data)
+stacked_data
+mood.medtest(values~ind)
+
+Mood's median test
+
+data:  values by ind
+X-squared = 129.27, df = 3, p-value < 2.2e-16
+
+P Value<0.05, It rejects null Hypothesis, Has difference among the different lab
+
+
+
+
+	
+
+
+3.	Sales of products in four different regions is tabulated for males and females. Find if male-female buyer rations are similar across regions.
+H0 : male-female buyer rations are similar across regions
+H1 : male-female buyer rations are not similar across regions
+
+Buyer=read.csv(file.choose())
+Buyer
+chisq.test(Buyer[,2:5])
+
+Pearson's Chi-squared test
+
+data:  Buyer[, 2:5]
+X-squared = 1.5959, df = 3, p-value = 0.6603
+
+P Value>0.05, It accepts null hypothesis.
+male-female buyer rations are similar across regions
+
+4.	TeleCall uses 4 centers around the globe to process customer order forms. They audit a certain %  of the customer order forms. Any error in order form renders it defective and has to be reworked before processing.  The manager wants to check whether the defective %  varies by centre. Please analyze the data at 5% significance level and help the manager draw appropriate inferences
+Ho : No of Defectives does not varies with centers
+H1 : No of Defectives varies with centers
+customer=read.csv(file.choose())
+customer
+attach(customer)
+df = as.data.frame(cbind(c(Phillippines,Indonesia,Malta,India),rep(c("Phillippines","Indonesia","Malta","India"),c(300,300,300,300))))
+colnames(df) <- c("Type","Location")
+df
+head(df)
+chisq.test(df$Type,df$Location)
+
+Pearson's Chi-squared test
+
+data:  df$Type and df$Location
+X-squared = 3.859, df = 3, p-value = 0.2771
+
+P Value>0.05, It accepts null hypothesis. No of Defectives does not varies with centers
+
+5.	Fantaloons Sales managers commented that % of males versus females walking in to the store differ based on day of the week. Analyze the data and determine whether there is evidence at 5 % significance level to support this hypothesis.
+Ho : males versus females walking in to the store doesnot differ based on day of the week.
+H1 : males versus females walking in to the store differ based on day of the week.
+
+Faltoons=read.csv(file.choose())
+Faltoons
+attach(Faltoons)
+dffalt = as.data.frame(cbind(c(Weekdays,Weekend),rep(c("Weekdays","Weekend"),c(400,400))))
+colnames(dffalt) <- c("Gender","Day")
+dffalt
+chisq.test(dffalt$Gender,dffalt$Day)
+
+data:  dffalt$Gender and dffalt$Day
+X-squared = 15.434, df = 1, p-value = 8.543e-05
+
+P Value<0.05,It rejects null Hypothesis, males versus females walking in to the store differ based on day of the week.
+
+
+
