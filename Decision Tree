@@ -1,0 +1,93 @@
+Iris
+install.packages("tree")
+library(tree)
+install.packages("party")
+data()
+data("iris")
+View(iris)
+?iris
+library(party)
+##### Using D.Tree #####
+#library(tree)
+iris_tree <- ctree(Species~.,data=iris)
+
+plot(iris_tree)
+
+ 
+
+pred_tree <- as.data.frame(predict(iris_tree,iris))
+pred_tree["final"] <- NULL
+View(pred_tree)
+for (i in 1:nrow(pred_tree)){
+  pred_tree[i,"final"] <- ifelse(pred_tree[i,"setosa"]>0.5,"setosa",ifelse(pred_tree[i,"versicolor"]>0.5,"versicolor","virginica"))
+}
+
+View(pred_tree)
+library(gmodels)
+CrossTable(iris$Species,pred_tree$`predict(iris_tree, iris)`)
+ 
+
+mean(pred_tree$`predict(iris_tree, iris)`==iris$Species) 
+.96
+
+Fraud Check
+install.packages("tree")
+library(tree)
+
+fraud <- read.csv(file.choose())
+
+View(fraud)
+Risky_Good = ifelse(fraud$Taxable.Income<= 30000, "Risky", "Good")
+View(fraud)
+FC = data.frame(fraud,Risky_Good)
+View(FC)
+
+FC_tree <- tree(Risky_Good~.,data=FC)
+
+plot(FC_tree)
+text(FC_tree,pretty = 0)
+
+pred_tree <- as.data.frame(predict(FC_tree,FC))
+View(pred_tree)
+pred_tree["final"] <- NULL
+View(pred_tree)
+for (i in 1:nrow(pred_tree)){
+  pred_tree[i,"final"] <- ifelse(pred_tree[i,"Good"]>0.5,"Good","Risky")
+}
+
+library(gmodels)
+CrossTable(FC$Risky_Good,pred_tree$final)
+ 
+mean(pred_tree$final==FC$Risky_Good)
+1
+
+
+Company Data
+library(tree)
+library(party)
+company <-  read.csv(file.choose())
+View(company)
+High = ifelse(company$Sales<10, "No", "Yes")
+CD = data.frame(company, High)
+CD_train <- CD[1:280,]
+
+# View(CD_train)
+CD_test <- CD[281:400,]
+
+CD_tree <- ctree(High~.,data=CD_train)
+plot(CD_tree)
+
+#pred_tree <- as.data.frame(predict(CD_tree,newdata=CD_test))
+#pred_tree["final"] <- NULL
+#View(pred_tree)
+pred_test_df <- predict(CD_tree,newdata=CD_test)
+View(pred_test_df)
+mean(pred_test_df==CD_test$High)
+library(gmodels)
+CrossTable(CD_test$High,pred_test_df)
+View(CD_train)
+View(CD_test)
+
+ 
+
+ 
