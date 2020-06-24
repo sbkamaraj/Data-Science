@@ -1,0 +1,82 @@
+Forest Fire using SVM
+forest<-read.csv(file.choose())
+View(forest)
+class(forest)
+str(forest)
+
+summary(forest)
+
+install.packages("kernlab")
+library(kernlab)
+library(caret)
+
+normalize<-function(x){
+  return ( (x-min(x))/(max(x)-min(x)))
+}
+forest$temp = normalize(forest$temp)
+forest$RH   = normalize(forest$RH)
+forest$wind = normalize(forest$wind)
+forest$rain = normalize(forest$rain)
+
+attach(forest)
+View(forest)
+# Data Partition 
+set.seed(123)
+ind <- sample(2, nrow(forest), replace = TRUE, prob = c(0.7,0.3))
+forest_train <- forest[ind==1,]
+forest_test  <- forest[ind==2,]
+
+model1<-ksvm(size_category ~temp+RH+wind+rain,data = forest_train,kernel = "vanilladot")
+model1
+pred1 <- predict(model1,forest_test)
+mean(pred1==forest_test$size_category)
+ 
+
+
+model2<-ksvm(size_category ~temp+RH+wind+rain,data = forest_train,kernel = "rbfdot")
+model2
+pred2 <- predict(model2,forest_test)
+mean(pred2==forest_test$size_category)
+ 
+
+model3<-ksvm(size_category ~temp+RH+wind+rain,data = forest_train,kernel = "besseldot")
+model3
+pred3 <- predict(model3,forest_test)
+mean(pred3==forest_test$size_category)
+ 
+
+model4<-ksvm(size_category ~temp+RH+wind+rain,data = forest_train,kernel = "polydot")
+model4
+pred4 <- predict(model4,forest_test)
+mean(pred4==forest_test$size_category)
+
+
+ 
+
+Salary data using SVM
+salary_train <- read.csv(file.choose())
+salary_test <- read.csv(file.choose())
+View(salary_test)
+View(salary_train)
+salary_train$educationno <- as.factor(salary_train$educationno)
+salary_test$educationno <- as.factor(salary_test$educationno)
+View(salary_train$educationno)
+library(kernlab)
+library(caret)
+model1<-ksvm(salary_train$Salary~., 
+             data= salary_train, kernel = "vanilladot")
+model1
+pred1 <- predict(model1,salary_test)
+
+mean(pred1==salary_test$Salary)
+
+ 
+
+model2<-ksvm(salary_train$Salary~., 
+             data= salary_train, kernel = "besseldot")
+model2
+pred2 <- predict(model2,salary_test)
+
+mean(pred1==salary_test$Salary)
+
+ 
