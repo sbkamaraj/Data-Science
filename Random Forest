@@ -1,0 +1,130 @@
+Iris using Random Forest
+# Using Random Forest
+install.packages("randomForest")
+library(randomForest)
+data(iris)
+View(iris)
+library(caret)
+# Splitting data into training and testing. As the species are in order 
+# splitting the data based on species 
+iris_setosa<-iris[iris$Species=="setosa",] # 50
+iris_versicolor <- iris[iris$Species=="versicolor",] # 50
+iris_virginica <- iris[iris$Species=="virginica",] # 50
+iris_train <- rbind(iris_setosa[1:25,],iris_versicolor[1:25,],iris_virginica[1:25,])
+iris_test <- rbind(iris_setosa[26:50,],iris_versicolor[26:50,],iris_virginica[26:50,])
+View(iris_train)
+# Building a random forest model on training data 
+fit.forest <- randomForest(Species~.,data=iris_train, na.action=na.roughfix,importance=TRUE)
+# Training accuracy 
+mean(iris_train$Species==predict(fit.forest,iris_train)) # 100% accuracy 
+1
+# Prediction of train data
+pred_train <- predict(fit.forest,iris_train)
+library(caret)
+
+
+# Confusion Matrix
+confusionMatrix(iris_train$Species, pred_train)
+ 
+
+
+# Predicting test data 
+pred_test <- predict(fit.forest,newdata=iris_test)
+mean(pred_test==iris_test$Species) 
+.94
+
+# Confusion Matrix 
+library(caret)
+confusionMatrix(iris_test$Species, pred_test)
+ 
+# Visualization 
+plot(fit.forest,lwd=2)
+legend("topright", colnames(fit.forest$err.rate),col=1:4,cex=0.8,fill=1:4)
+
+ 
+
+
+
+Company Data using Random forest
+library(tree)
+library(party)
+company <-  read.csv(file.choose())
+View(company)
+High = ifelse(company$Sales<10, "No", "Yes")
+CD = data.frame(company, High)
+CD_train <- CD[1:280,]
+
+# View(CD_train)
+CD_test <- CD[281:400,]
+library(randomForest)
+fit.forest <- randomForest(High~.,data=CD_train, na.action=na.roughfix,importance=TRUE)
+
+mean(CD_train$High==predict(fit.forest,CD_train)) # 100% accuracy 
+1
+# Prediction of train data
+pred_train <- predict(fit.forest,CD_train)
+library(caret)
+
+
+# Confusion Matrix
+confusionMatrix(CD_train$High, pred_train)
+ 
+
+# Predicting test data 
+pred_test <- predict(fit.forest,CD_test)
+mean(pred_test==CD_test$High) # Accuracy = 94.6 % 
+1
+
+# Confusion Matrix 
+library(caret)
+confusionMatrix(CD_test$High, pred_test)
+ 
+# Visualization 
+plot(fit.forest,lwd=2)
+legend("topright", colnames(fit.forest$err.rate),col=1:4,cex=0.8,fill=1:4)
+
+ 
+
+Fraud_check using Random forest
+
+
+fraud <- read.csv(file.choose())
+
+View(fraud)
+Risky_Good = ifelse(fraud$Taxable.Income<= 30000, "Risky", "Good")
+View(fraud)
+FC = data.frame(fraud,Risky_Good)
+View(FC)
+table(FC$Risky_Good)
+FC_train <- FC[1:420,]
+FC_test <- FC[421:600,]
+install.packages("randomForest")
+library(randomForest)
+
+fit.forest <- randomForest(Risky_Good~.,data=FC_train, na.action=na.roughfix,importance=TRUE)
+
+mean(FC_train$Risky_Good==predict(fit.forest,FC_train)) # 100% accuracy 
+1
+# Prediction of train data
+pred_train <- predict(fit.forest,FC_train)
+library(caret)
+
+
+# Confusion Matrix
+confusionMatrix(FC_train$Risky_Good, pred_train)
+
+ 
+# Predicting test data 
+pred_test <- predict(fit.forest,FC_test)
+mean(pred_test==FC_test$Risky_Good) # Accuracy = 94.6 % 
+1
+
+# Confusion Matrix 
+library(caret)
+confusionMatrix(FC_test$Risky_Good, pred_test)
+
+ 
+ 
+# Visualization 
+plot(fit.forest,lwd=2)
+legend("topright", colnames(fit.forest$err.rate),col=1:4,cex=0.8,fill=1:4)
