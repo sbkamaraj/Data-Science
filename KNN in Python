@@ -1,0 +1,90 @@
+Zoo Using KNN using Python
+import pandas as pd
+import numpy as np
+zoo = pd.read_csv("E:\\Assignment\\KNN\\Zoo.csv")
+
+# Training and Test data using 
+from sklearn.model_selection import train_test_split
+train,test = train_test_split(zoo,test_size = 0.3)
+from sklearn.neighbors import KNeighborsClassifier as KNC
+neigh = KNC(n_neighbors= 3)
+neigh.fit(train.iloc[:,1:17],train.iloc[:,17])
+train_acc = np.mean(neigh.predict(train.iloc[:,1:17])==train.iloc[:,17])
+test_acc = np.mean(neigh.predict(test.iloc[:,1:17])==test.iloc[:,17])
+neigh = KNC(n_neighbors= 5)
+neigh.fit(train.iloc[:,1:17],train.iloc[:,17])
+train_acc = np.mean(neigh.predict(train.iloc[:,1:17])==train.iloc[:,17])
+print(train_acc) 
+test_acc = np.mean(neigh.predict(test.iloc[:,1:17])==test.iloc[:,17])
+print(test_acc)
+acc = []
+for i in range(3,50,2):
+    neigh = KNC(n_neighbors=i)
+    neigh.fit(train.iloc[:,1:17],train.iloc[:,17])
+    train_acc = np.mean(neigh.predict(train.iloc[:,1:17])==train.iloc[:,17])
+    test_acc = np.mean(neigh.predict(test.iloc[:,1:17])==test.iloc[:,17])
+    acc.append([train_acc,test_acc])
+print(acc)
+import matplotlib.pyplot as plt
+plt.plot(np.arange(3,50,2),[i[0] for i in acc],"bo-")
+plt.plot(np.arange(3,50,2),[i[1] for i in acc],"ro-")
+plt.legend(["train","test"])
+plt.show()
+ 
+
+
+
+Glass using KNN using R
+glass <- read.csv(file.choose())
+View(glass)
+
+table(glass$Type)
+str(glass)
+glass$Type <- factor(glass$Type, levels = c(1,2,3,5,6,7),
+                         labels = c("one", "two","three","five","six","seven"))
+View(glass)
+round(prop.table(table(glass$Type)) * 100, digits = 1)
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+glass_n <- as.data.frame(lapply(glass[1:9], normalize))
+View(glass_n)
+# create training and test data
+
+set.seed(123)
+ind <- sample(2, nrow(glass_n), replace = TRUE, prob = c(0.7,0.3))
+glass_train <- glass_n[ind==1,]
+glass_test <-  glass_n[ind==2,]
+
+
+
+View(glass_train)
+
+View(glass_test)
+# create labels for training and test data
+set.seed(123)
+ind1 <- sample(2, nrow(glass), replace = TRUE, prob = c(0.7,0.3))
+glass_train_labels <- glass[ind1==1,10]
+glass_test_labels <-  glass[ind1==2,10]
+
+View(glass_train_labels)
+
+
+
+View(glass_test_labels)
+
+# load the "class" library
+install.packages("class")
+library(class)
+
+glass_test_pred <- knn(train = glass_train, test = glass_test,
+                      cl=glass_train_labels, k=1)
+
+# Create the cross tabulation of predicted vs. actual
+
+CrossTable(x = glass_test_labels, y = glass_test_pred,
+           prop.chisq=FALSE)
+
+ 
+
+ 
